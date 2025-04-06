@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+lib/
+
+# Environment variables
+.env
+
+# VS Code
+.vscode/
+
+# Logs & Neo4j data
+*.log
+*.db
+
+candidates.json

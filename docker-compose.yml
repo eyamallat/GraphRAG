@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  neo4j:
+    image: neo4j:5.15
+    container_name: neo4j
+    ports:    
+      - "7474:7474"  
+      - "7687:7687"   
+    environment:
+      NEO4J_AUTH: ${NEO4J_AUTH}
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:7474"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  knowledge-graph:
+    build: .
+    container_name: knowledge-graph-app
+    env_file:
+      - .env
+    depends_on:
+      neo4j:
+        condition: service_healthy
+    volumes:
+      - .:/app
+      - ./candidates.json:/app/candidates.json
+
+    stdin_open: true
+    tty: true
+  
+  
