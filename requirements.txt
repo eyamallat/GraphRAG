@@ -11,6 +11,3 @@ sentence-transformers
 networkx 
 pyvis
 
-# Optional but recommended
-#numpy==1.24.3
-#json5==0.9.14

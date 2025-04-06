@@ -1,1 +1,1 @@
-# GrapgRAG
+# GraphRAG
