@@ -1,6 +1,7 @@
 # Core Python libraries
 neo4j==5.15.0
 langchain==0.3.0
+pydantic==2.7.4
 llama-parse==0.3.0
 llama-index-core==0.10.14
 langchain-groq==0.2.0
@@ -10,4 +11,8 @@ langchain-core==0.3.0
 sentence-transformers
 networkx 
 pyvis
-
+jq
+langchain-milvus
+langchain-huggingface
+hf-xet
+langchain-mistralai

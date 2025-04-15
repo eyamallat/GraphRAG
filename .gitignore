@@ -7,6 +7,13 @@ __pycache__/
 venv/
 lib/
 
+# Docker volumes
+volumes/
+
+
+#ignore built knowledge graph HTML if generated
+knowledge_graph/knowledge_graph.html
+
 # Environment variables
 .env
 
