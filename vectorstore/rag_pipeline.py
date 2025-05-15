@@ -18,10 +18,9 @@ def format_docs(docs):
 
 def run_rag_pipeline():
     connections.connect(host=os.environ.get("MILVUS_HOST"), port=os.environ.get("MILVUS_PORT"))
-    if utility.has_collection("rag_milvus"):
-        utility.drop_collection("rag_milvus")
+
     prompt = PromptTemplate.from_template(
-     """
+    """
     Human: You are an AI assistant helping evaluate candidate profiles based on a job requirement.
 
     Given the following candidate profiles:
@@ -31,15 +30,20 @@ def run_rag_pipeline():
     {query}
 
     Your tasks:
-    1. Rank the candidates from most to least relevant to the job.
-    2. Assign a relevance score to each candidate from 0 (not relevant) to 10 (highly relevant).
-    3. Only include candidates with a score greater than 4 in your final response.
-    4. Use specific details and entity names to support your reasoning.
+    1. First, check if the job requirement or query is clear and specific. If the query appears to be a placeholder, typo, or is too vague , do not proceed.
+    2. If the query is unclear, respond with: 
+       "La description de poste ou la requête fournie n'est pas suffisamment claire pour évaluer la pertinence des candidats. Veuillez reformuler ou fournir une description plus détaillée du poste."
+    3. If the query is clear:
+       - Rank the candidates from most to least relevant to the job.
+       - Assign a relevance score to each candidate from 0 (not relevant) to 10 (highly relevant).
+       - Only include candidates with a score greater than 4 in your  response.
+       - Use specific details and entity names to support your reasoning.
+       - just include the relevant candidates in the response.
 
-    Provide your answer in a clear and concise format.
+    Return the final answer clearly and concisely, in **French**..
     Assistant:
     """
-)
+    )
     #llm = ChatGroq(groq_api_key=os.getenv("GROQ_API_KEY"), model_name="llama3-70b-8192")
     llm = ChatMistralAI(model="mistral-large-latest", temperature=0, api_key=os.environ["MISTRAL_API_KEY"])   
 
@@ -54,10 +58,12 @@ def run_rag_pipeline():
         "lowercase",
     ],
 }
+    model=HuggingFaceEmbeddings(model_name='intfloat/multilingual-e5-large-instruct')
+
     vectorstore = Milvus.from_documents(
         collection_name="rag_milvus",
         documents=doc_splits,
-        embedding=HuggingFaceEmbeddings(),
+        embedding=model,
         builtin_function=BM25BuiltInFunction(output_field_names="sparse",
                                              analyzer_params=analyzer_params_custom,),
         vector_field=["dense", "sparse"],
@@ -70,7 +76,7 @@ def run_rag_pipeline():
     )
     retriever = vectorstore.as_retriever(
     search_kwargs={
-        "k": 5,
+        "k": 3,
         "search_type": "hybrid",
         "alpha": 0.5  
     }
