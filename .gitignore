@@ -1,4 +1,4 @@
-# Python
+# Python cache and compiled files
 __pycache__/
 *.py[cod]
 *$py.class
@@ -10,16 +10,23 @@ lib/
 # Docker volumes
 volumes/
 
+# Knowledge graph artifacts
 knowledge_graph.html
-#ignore built knowledge graph HTML if generated
 knowledge_graph/
 
-# VS Code
+# Editor configs
 .vscode/
+
+# Configuration files
 user.yaml
 embedEtcd.yaml
 
-# Logs & Neo4j data
+# Logs and Neo4j database files
 *.log
 *.db
+*.dump
+data/
+import/
+
+# Miscellaneous
 standalone.bat
