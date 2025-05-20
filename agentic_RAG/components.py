@@ -1,14 +1,61 @@
+import json
+import os
 from langchain.tools.retriever import create_retriever_tool
 from langgraph.graph import MessagesState
+from agentic_RAG.utils import create_documents
 from langgraph.prebuilt import ToolNode
 from langchain_mistralai import ChatMistralAI
-from vectorstore.rag_pipeline import create_retriever, format_docs
-import os
 from langchain.tools.retriever import create_retriever_tool
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import RunnablePassthrough
+from langchain_milvus import Milvus, BM25BuiltInFunction
+from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_groq import ChatGroq
+from pymilvus import (
+    connections,
+    utility,   
+)
+def format_docs(docs):
+    return "\n\n".join(doc.page_content for doc in docs)
 
+def create_retriever():
+    connections.connect(host=os.environ.get("MILVUS_HOST"), port=os.environ.get("MILVUS_PORT"))
+
+    with open('./candidates.json', 'r', encoding='utf-8') as f:
+        data = json.load(f) 
+             
+    doc_splits = create_documents(data)
+    
+    analyzer_params_custom = {
+    "tokenizer": "standard",
+    "filter": [
+        "lowercase",
+    ],
+}
+    model=HuggingFaceEmbeddings(model_name='intfloat/multilingual-e5-large-instruct')
+
+    vectorstore = Milvus.from_documents(
+        collection_name="rag_milvus",
+        documents=doc_splits,
+        embedding=model,
+        builtin_function=BM25BuiltInFunction(output_field_names="sparse",
+                                             analyzer_params=analyzer_params_custom,),
+        vector_field=["dense", "sparse"],
+        connection_args={
+            "host": os.environ.get("MILVUS_HOST"), 
+            "port": os.environ.get("MILVUS_PORT"),
+        },
+        consistency_level="Strong",
+        drop_old=True,
+    )
+    return vectorstore.as_retriever(
+    search_kwargs={
+        "k": 3,
+        "search_type": "hybrid",
+        "alpha": 0.5  
+    }
+)
 retriever=create_retriever()
 GENERATE_PROMPT = PromptTemplate.from_template(
         """

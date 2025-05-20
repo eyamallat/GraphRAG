@@ -1,11 +1,9 @@
-from vectorstore.rag_pipeline import run_rag_pipeline
 from agentic_RAG.workflow import  graph
 from pymilvus import connections
 from langchain_core.messages import HumanMessage,AIMessage
 from pprint import pprint
 
 def main():
-    #run_rag_pipeline()
     print("🧠 LangGraph Agentic RAG is live.")
     thread_id = "ahhh123"
     config = {"configurable": {"thread_id": thread_id}}

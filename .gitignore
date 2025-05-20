@@ -10,18 +10,16 @@ lib/
 # Docker volumes
 volumes/
 
-
+knowledge_graph.html
 #ignore built knowledge graph HTML if generated
-knowledge_graph/knowledge_graph.html
-
-# Environment variables
-.env
+knowledge_graph/
 
 # VS Code
 .vscode/
+user.yaml
+embedEtcd.yaml
 
 # Logs & Neo4j data
 *.log
 *.db
-
-candidates.json
+standalone.bat
