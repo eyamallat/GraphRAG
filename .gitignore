@@ -12,7 +12,7 @@ volumes/
 
 # Knowledge graph artifacts
 knowledge_graph.html
-knowledge_graph/
+#knowledge_graph/
 
 # Editor configs
 .vscode/
@@ -29,4 +29,6 @@ data/
 import/
 
 # Miscellaneous
-standalone.bat
+#standalone.bat
+.env
+candidates.json

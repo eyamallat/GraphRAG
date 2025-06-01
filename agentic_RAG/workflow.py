@@ -1,8 +1,10 @@
 from langgraph.graph import StateGraph, START, END
 from langgraph.prebuilt import ToolNode
 from langgraph.prebuilt import tools_condition
-from agentic_RAG.components import generate_answer,generate_query_or_respond,retrieve
+from agentic_RAG.components import generate_answer,generate_query_or_respond,retrieve,memory
 from langgraph.graph import MessagesState
+
+
 
 workflow = StateGraph(MessagesState)
 
@@ -25,4 +27,4 @@ workflow.add_edge("generate_answer", END)
 
 
 # Compile
-graph = workflow.compile()
+graph = workflow.compile(checkpointer=memory)

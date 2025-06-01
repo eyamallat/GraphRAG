@@ -3,21 +3,22 @@ import os
 from langchain.tools.retriever import create_retriever_tool
 from langgraph.graph import MessagesState
 from agentic_RAG.utils import create_documents
-from langgraph.prebuilt import ToolNode
 from langchain_mistralai import ChatMistralAI
 from langchain.tools.retriever import create_retriever_tool
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import RunnablePassthrough
+from langgraph.checkpoint.memory import MemorySaver  # an in-memory checkpointer
+from langgraph.prebuilt import create_react_agent
 from langchain_milvus import Milvus, BM25BuiltInFunction
 from langchain_huggingface import HuggingFaceEmbeddings
-from langchain_groq import ChatGroq
 from pymilvus import (
     connections,
-    utility,   
 )
+
 def format_docs(docs):
     return "\n\n".join(doc.page_content for doc in docs)
+
 
 def create_retriever():
     connections.connect(host=os.environ.get("MILVUS_HOST"), port=os.environ.get("MILVUS_PORT"))
@@ -57,6 +58,11 @@ def create_retriever():
     }
 )
 retriever=create_retriever()
+retrieve= create_retriever_tool(
+    retriever,
+    "retrieve_candidates",
+    "Ranks and scores candidates based on job requirements",
+)
 GENERATE_PROMPT = PromptTemplate.from_template(
         """
     Human: You are an AI assistant helping evaluate candidate profiles based on a job requirement.
@@ -68,24 +74,20 @@ GENERATE_PROMPT = PromptTemplate.from_template(
     {query}
 
     Your tasks:
-        -Rank the candidates from most to least relevant to the job and refer to them by their ids
+        - Rank the candidates from most to least relevant to the job.
         - Assign a relevance score to each candidate from 0 (not relevant) to 10 (highly relevant).
-        - Only include candidates with a score strictly greater than 4 in your answer.
+        - Only include candidates's ids with a score strictly greater than 4 in your answer.
         - Use specific details (e.g., job titles, skills, experiences) to support your ranking.
-        - Don't show the irrelevant candidates in the answer
+        - Don't show the irrelevant candidates in the answer.
+        -Translate the answer to french.
 
     Return the answer clearly and concisely, in **French**.
     Assistant:
 
     """
 )
+llm = ChatMistralAI(model="mistral-large-latest", temperature=0, api_key=os.environ["MISTRAL_API_KEY"],tools=[])  
 
-llm = ChatMistralAI(model="mistral-large-latest", temperature=0, api_key=os.environ["MISTRAL_API_KEY"])  
-retrieve= create_retriever_tool(
-    retriever,
-    "retrieve_candidates",
-    "Ranks and scores candidates based on job requirements",
-)
 
 def generate_answer(state: MessagesState):
     """Generate an answer."""
@@ -108,14 +110,13 @@ def generate_answer(state: MessagesState):
     return {"messages": [response]}
 
 
+memory = MemorySaver()
+langgraph_agent_executor = create_react_agent(model=llm, tools=[retrieve],checkpointer=memory)
 
 
 def generate_query_or_respond(state: MessagesState):
-    """Call the model to generate a response based on the current state. Given
-    the question, it will decide to retrieve using the retriever tool, or simply respond to the user.
-    """
-    response = (
-        llm
-        .bind_tools([retrieve]).invoke(state["messages"])
-    )
-    return {"messages": [response]}
+    """Call the agent executor and return only the last message."""
+    result = langgraph_agent_executor.invoke({"messages": state["messages"]})
+    last_message = result["messages"][-1]
+    return {"messages": [last_message]}
+
