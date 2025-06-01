@@ -1,5 +1,7 @@
 # GraphRAG
 
+pip install -U langchain-mistralai
+
 ## Milvus standalone
 
 ### 1ére commande
