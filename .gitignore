@@ -29,6 +29,6 @@ data/
 import/
 
 # Miscellaneous
-#standalone.bat
+standalone.bat
 .env
 candidates.json
