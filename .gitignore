@@ -11,15 +11,12 @@ lib/
 volumes/
 
 # Knowledge graph artifacts
-knowledge_graph.html
 #knowledge_graph/
 
 # Editor configs
 .vscode/
 
 # Configuration files
-user.yaml
-embedEtcd.yaml
 
 # Logs and Neo4j database files
 *.log
@@ -29,6 +26,5 @@ data/
 import/
 
 # Miscellaneous
-standalone.bat
 .env
 candidates.json

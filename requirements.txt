@@ -4,7 +4,7 @@ langchain-groq==0.2.0
 langchain-community==0.3.0
 langchain-milvus==0.1.10
 langchain-huggingface
-langgraph
+langgraph>= 0.0.40
 pydantic==2.7.4
 python-dotenv==1.0.1
 sentence-transformers
@@ -15,3 +15,6 @@ einops
 pymilvus[model]==2.5.5
 langchain-mistralai
 langchain-google-genai
+langgraph-checkpoint-postgres==2.0.3
+psycopg[binary,pool]==3.2.3
+langchain-postgres

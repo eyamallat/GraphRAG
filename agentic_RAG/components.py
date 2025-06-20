@@ -1,20 +1,27 @@
-import json
-import os
 from langchain.tools.retriever import create_retriever_tool
-from langgraph.graph import MessagesState
-from agentic_RAG.utils import create_documents
 from langchain_mistralai import ChatMistralAI
+import os
+import json
+from agentic_RAG.utils import create_documents
 from langchain.tools.retriever import create_retriever_tool
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import RunnablePassthrough
-from langgraph.checkpoint.memory import MemorySaver  # an in-memory checkpointer
+from langgraph.prebuilt import create_react_agent
+from langchain_core.messages import AnyMessage
+from typing_extensions import TypedDict,Annotated
+from langgraph.graph.message import add_messages
 from langgraph.prebuilt import create_react_agent
 from langchain_milvus import Milvus, BM25BuiltInFunction
 from langchain_huggingface import HuggingFaceEmbeddings
 from pymilvus import (
     connections,
+    utility
 )
+
+class State(TypedDict):
+        thread_id: str
+        messages: Annotated[list[AnyMessage], add_messages]
 
 def format_docs(docs):
     return "\n\n".join(doc.page_content for doc in docs)
@@ -57,12 +64,15 @@ def create_retriever():
         "alpha": 0.5  
     }
 )
+
 retriever=create_retriever()
+
 retrieve= create_retriever_tool(
     retriever,
     "retrieve_candidates",
     "Ranks and scores candidates based on job requirements",
 )
+
 GENERATE_PROMPT = PromptTemplate.from_template(
         """
     Human: You are an AI assistant helping evaluate candidate profiles based on a job requirement.
@@ -86,10 +96,11 @@ GENERATE_PROMPT = PromptTemplate.from_template(
 
     """
 )
+
 llm = ChatMistralAI(model="mistral-large-latest", temperature=0, api_key=os.environ["MISTRAL_API_KEY"],tools=[])  
 
 
-def generate_answer(state: MessagesState):
+def generate_answer(state: State):
     """Generate an answer."""
     question = state["messages"][0].content
     print("---GENERATE---")
@@ -110,13 +121,20 @@ def generate_answer(state: MessagesState):
     return {"messages": [response]}
 
 
-memory = MemorySaver()
-langgraph_agent_executor = create_react_agent(model=llm, tools=[retrieve],checkpointer=memory)
+def build_agent(memory):
+    return create_react_agent(model=llm, tools=[retrieve], checkpointer=memory)
 
-
-def generate_query_or_respond(state: MessagesState):
+def generate_query_or_respond(state: State,agent_executor=None):
     """Call the agent executor and return only the last message."""
-    result = langgraph_agent_executor.invoke({"messages": state["messages"]})
+    result = agent_executor.invoke(
+        {"messages": state["messages"]},
+        config={
+            "configurable": {
+                "thread_id": state["thread_id"]
+            }
+        }
+    )
     last_message = result["messages"][-1]
     return {"messages": [last_message]}
+
 
